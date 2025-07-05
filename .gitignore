@@ -361,3 +361,18 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# ビルド成果物（Debug/Release フォルダ）
+/Debug/
+/Release/
+
+# オブジェクトファイル・実行ファイル・ライブラリ
+*.obj
+*.exe
+*.lib
+
+# OpenCV XXL DLL
+*.dll
+
+# ログファイル
+*.log
