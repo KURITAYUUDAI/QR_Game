@@ -84,7 +84,7 @@
       <ShaderModel>5.0</ShaderModel>
     </FxCompile>
     <PostBuildEvent>
-      <Command>xcopy /Y /I "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250327\External\opencv\build\x64\vc16\bin\Debug\opencv_world4110d.dll" "$(OutDir)\opencv_world4110d.dll"
+      <Command>xcopy /Y /I "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250327\External\opencv\build\x64\vc16\bin\Debug\opencv_world4110d.dll" "$(OutDir)"
 xcopy /Y /I "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250327\External\ZXing\bin\Debug\ZXingd.dll" "$(OutDir)"
 </Command>
     </PostBuildEvent>
