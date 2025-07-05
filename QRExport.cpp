@@ -44,7 +44,8 @@ void QRExport::Update()
 	ImGui::SliderInt("Scale", &scale_, 1, 20);
 	ImGui::SliderInt("Border", &border_, 0, 10);
 
-	if (ImGui::Button("Generate QR")) {
+	if (ImGui::Button("Generate QR")) 
+	{
 		// QRコードエンコード
 		ZXing::BitMatrix matrix = writer_.encode(text_, width_, height_);
 		// BitMatrixをcv::Matに変換
