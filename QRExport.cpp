@@ -68,6 +68,7 @@ void QRExport::Update()
 		if (ImGui::Button("Save QR Code")) 
 		{
 			// 保存
+			std::filesystem::create_directories(savePath_);
 			std::string filename = "/" + text_ + ".png";
 			std::string saveFilePath = savePath_ + filename;
 			cv::imwrite(saveFilePath, qrImage_);
