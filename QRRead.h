@@ -10,6 +10,16 @@ class QRRead : public IFeature
 {
 public:
 	
+	enum CameraMode 
+	{
+		Wait,				// 待機モード
+		PC_Camera,			// PCカメラモード
+		CellPhone_Camera,	// スマホカメラモード
+	};
+
+	QRRead();
+
+	// 初期化
 	void Initialize() override;
 
 	// 更新
@@ -18,18 +28,23 @@ public:
 	// 停止
 	void Shutdown() override;
 
+	// モード変更
+	void ChangeCameraMode(CameraMode mode);
+
 private:
-	
-	// カメラ入力用
-	cv::VideoCapture camera_;
-
-	// フレーム格納用
-	cv::Mat frame_;
-
-	// ZXing ライブラリのオプション
-	ZXing::ReaderOptions options_;
 
 	// QRコードから読み取った文字列
 	std::string qrCodeText_;
 
+	// カメラ変更用変数
+	CameraMode mode_;
+
+	// ImGui::Combo用のインデックス
+	int cameraModeIndex_;
+
+	// 現在のカメラクラスへのポインタ
+	std::unique_ptr<IFeature> currentCamera_;
+
 };
+
+

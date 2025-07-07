@@ -5,6 +5,7 @@
 #include <memory>
 #include "IFeature.h"
 
+
 // ゲームシーン
 class GameScene 
 {
@@ -39,6 +40,8 @@ public:
 private:
 
 	Mode mode_;
+
+	int modeIndex_;
 
 	std::unique_ptr<IFeature> current_;
 

@@ -2,89 +2,83 @@
 
 #include <opencv2/highgui.hpp>
 
-#include <ZXing/ReaderOptions.h>   // ReaderOptions
-#include <ZXing/BarcodeFormat.h>   // BarcodeFormat::QrCode
-#include <ZXing/ImageView.h>       // ImageView
+#include "PCCamera.h"
+#include "CellPhoneCamera.h"
 
 using namespace KamataEngine;
 
+QRRead::QRRead()
+{ 
+	ChangeCameraMode(CameraMode::Wait); 
+}
+
 void QRRead::Initialize() 
 {
-	// カメラを起動
-	camera_.open(0);
-	if (!camera_.isOpened()) 
+	cameraModeIndex_ = int(CameraMode::Wait);
+	ChangeCameraMode(CameraMode(cameraModeIndex_));
+
+	if (currentCamera_) 
 	{
-		// カメラが開けなかった場合はログにエラーメッセージを表示
-		cv::destroyAllWindows();
-		ImGui::Text("Error: Could not open camera.");
-
-		return;
+		currentCamera_->Shutdown();
 	}
-
-	// ZXing のオプション設定
-	options_.setTryHarder(true);
-	options_.setFormats(ZXing::BarcodeFormat::QRCode);
-
-	// 解像度を設定（必要に応じて）
-	camera_.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-	camera_.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-
-	// ウィンドウを作成
-	cv::namedWindow("Camera Preview", cv::WINDOW_AUTOSIZE);
 }
 
 void QRRead::Update() 
 {
-	if (!camera_.isOpened()) {
-		return;
-	}
-	// カメラから１フレーム取得
-	camera_ >> frame_;
-	if (frame_.empty()) {
-		// フレーム取得失敗時は何もしない
-		return;
+	const char* items[] = {"Wait", "PC_Camera", "CellPhone_Camera"};
+	if (ImGui::Combo("CameraChange", &cameraModeIndex_, items, IM_ARRAYSIZE(items))) 
+	{
+		ChangeCameraMode(CameraMode(cameraModeIndex_));
 	}
 
-	// グレースケール化
-	cv::Mat gray;
-	cv::cvtColor(frame_, gray, cv::COLOR_BGR2GRAY);
-
-	// ZXing に投げるための ImageView を生成
-	ZXing::ImageView iv(gray.data, gray.cols, gray.rows, ZXing::ImageFormat::Lum);
-
-	// デコード実行
-	ZXing::Result result = ZXing::ReadBarcode(iv, options_);
-	if (result.isValid()) {
-		// 読み取った文字列を取得
-		qrCodeText_ = result.text();
-
-		// バウンディングポリゴンを描く
-		auto pos = result.position(); // vector<PointF>
-		for (size_t i = 0; i < pos.size(); ++i) {
-			const auto& p1 = pos[i];
-			const auto& p2 = pos[(i + 1) % pos.size()];
-			cv::line(frame_, cv::Point(int(p1.x), int(p1.y)), cv::Point(int(p2.x), int(p2.y)), cv::Scalar(255, 0, 0), 2);
-		}
+	// 現在機能の更新処理
+	if (currentCamera_) 
+	{
+		currentCamera_->Update();
 	}
-
-	// OpenCV のウィンドウに表示
-	cv::imshow("Camera Preview", frame_);
-	// ウィンドウのイベント処理＆キー入力待ち（1ms）
-	if (Input::GetInstance()->PushKey(DIK_F1)) {
-		// ESCキーが押されたらウィンドウを閉じる
-		cv::destroyAllWindows();
-		return;
-	}
-
-	ImGui::Text("%s", qrCodeText_.c_str());
 }
 
 void QRRead::Shutdown() 
 {
-	// カメラを閉じる
-	if (camera_.isOpened()) {
-		camera_.release();
+	// メンバ変数への代入処理
+	ChangeCameraMode(CameraMode::Wait);
+
+	if (currentCamera_) 
+	{
+		currentCamera_->Shutdown();
 	}
-	// OpenCVのウィンドウを閉じる
-	cv::destroyAllWindows();
+}
+
+void QRRead::ChangeCameraMode(CameraMode mode)
+{
+	// 現在のモードを終了し内部をリセットする
+	if (currentCamera_) 
+	{
+		currentCamera_->Shutdown();
+		currentCamera_.reset();
+	}
+
+	// 選択されたモードをcurrent_に代入する
+	switch (mode) 
+	{
+	case Wait:
+		break;
+
+	case PC_Camera:
+		currentCamera_ = std::make_unique<PCCamera>();
+		break;
+
+	case CellPhone_Camera:
+		currentCamera_ = std::make_unique<CellPhoneCamera>();
+		break;
+	}
+
+	// current_がnullptrでない場合は初期化を行う
+	if (!currentCamera_) 
+	{
+		mode_ = mode;
+		return;
+	}
+	currentCamera_->Initialize();
+	mode_ = mode;
 }

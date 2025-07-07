@@ -123,8 +123,11 @@ xcopy /Y "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CameraSelector.cpp" />
+    <ClCompile Include="CellPhoneCamera.cpp" />
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PCCamera.cpp" />
     <ClCompile Include="QRExport.cpp" />
     <ClCompile Include="QRRead.cpp" />
   </ItemGroup>
@@ -204,8 +207,11 @@ xcopy /Y "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250
     <None Include="Resources\shaders\Sprite.hlsli" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CameraSelector.h" />
+    <ClInclude Include="CellPhoneCamera.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="IFeature.h" />
+    <ClInclude Include="PCCamera.h" />
     <ClInclude Include="QRExport.h" />
     <ClInclude Include="QRRead.h" />
   </ItemGroup>
