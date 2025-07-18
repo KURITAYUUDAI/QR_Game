@@ -1,9 +1,13 @@
 #include "QRRead.h"
 
-#include <opencv2/highgui.hpp>
-
 #include "PCCamera.h"
 #include "CellPhoneCamera.h"
+
+#include <opencv2/highgui.hpp>
+
+#include <ZXing/ReaderOptions.h>	// ReaderOptions
+#include <ZXing/BarcodeFormat.h>	// BarcodeFormat::QrCode
+#include <ZXing/ImageView.h>		// ImageView
 
 using namespace KamataEngine;
 
@@ -21,6 +25,10 @@ void QRRead::Initialize()
 	{
 		currentCamera_->Shutdown();
 	}
+
+	// ZXing のオプション設定
+	options_.setTryHarder(true);
+	options_.setFormats(ZXing::BarcodeFormat::QRCode);
 }
 
 void QRRead::Update() 
@@ -35,6 +43,43 @@ void QRRead::Update()
 	if (currentCamera_) 
 	{
 		currentCamera_->Update();
+		frame_ = currentCamera_->GetFrame();
+
+		// グレースケール化
+		cv::Mat gray;
+		cv::cvtColor(frame_, gray, cv::COLOR_BGR2GRAY);
+
+		// ZXing に投げるための ImageView を生成
+		ZXing::ImageView iv(gray.data, gray.cols, gray.rows, ZXing::ImageFormat::Lum);
+
+		// デコード実行
+		ZXing::Result result = ZXing::ReadBarcode(iv, options_);
+		if (result.isValid()) 
+		{
+			// 読み取った文字列を取得
+			qrCodeText_ = result.text();
+
+			// バウンディングポリゴンを描く
+			auto pos = result.position(); // vector<PointF>
+			for (size_t i = 0; i < pos.size(); ++i) 
+			{
+				const auto& p1 = pos[i];
+				const auto& p2 = pos[(i + 1) % pos.size()];
+				cv::line(frame_, cv::Point(int(p1.x), int(p1.y)), cv::Point(int(p2.x), int(p2.y)), cv::Scalar(255, 0, 0), 2);
+			}
+		}
+
+		// OpenCV のウィンドウに表示
+		cv::imshow("Preview", frame_);
+		// ウィンドウのイベント処理＆キー入力待ち（1ms）
+		if (Input::GetInstance()->PushKey(DIK_F1)) 
+		{
+			// ESCキーが押されたらウィンドウを閉じる
+			cv::destroyAllWindows();
+			return;
+		}
+
+		ImGui::Text("%s", qrCodeText_.c_str());
 	}
 }
 

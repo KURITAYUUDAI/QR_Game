@@ -7,6 +7,11 @@
 #include <ZXing/MultiFormatWriter.h>
 #include <ZXing/BitMatrix.h>
 
+#include <cstdint>
+#include <vector>
+
+#include "Character.h"
+
 class QRExport : public IFeature 
 {
 public:
@@ -43,4 +48,16 @@ private:
 	// 生成したQRコードの保存先パス
 	std::string savePath_;
 
+
+
+	// バイナリ生成用
+	cv::Mat generateBinaryQR(const std::vector<uint8_t>& data);
+
+	// ユーティリティ
+	template<typename T> void appendLE(std::vector<uint8_t>& buf, T value) 
+	{
+		for (size_t i = 0; i < sizeof(T); ++i)
+			buf.push_back(static_cast<uint8_t>((value >> (8 * i)) & 0xFF));
+	}
+	
 };

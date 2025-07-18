@@ -1,5 +1,6 @@
 #pragma once
 #include "IFeature.h"
+#include "ICamera.h"
 
 #include "KamataEngine.h"
 
@@ -33,9 +34,6 @@ public:
 
 private:
 
-	// QRコードから読み取った文字列
-	std::string qrCodeText_;
-
 	// カメラ変更用変数
 	CameraMode mode_;
 
@@ -43,7 +41,16 @@ private:
 	int cameraModeIndex_;
 
 	// 現在のカメラクラスへのポインタ
-	std::unique_ptr<IFeature> currentCamera_;
+	std::unique_ptr<ICamera> currentCamera_;
+
+	// フレーム格納用
+	cv::Mat frame_;
+
+	// ZXing ライブラリのオプション
+	ZXing::ReaderOptions options_;
+
+	// QRコードから読み取った文字列
+	std::string qrCodeText_;
 
 };
 

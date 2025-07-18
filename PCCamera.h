@@ -1,11 +1,11 @@
 #pragma once
-#include "IFeature.h"
+#include "ICamera.h"
 #include "KamataEngine.h"
 
 #include <opencv2/opencv.hpp>
 #include <ZXing/ReadBarcode.h>
 
-class PCCamera : public IFeature 
+class PCCamera : public ICamera
 {
 private:
 	void Initialize() override;
@@ -15,6 +15,9 @@ private:
 
 	// 停止
 	void Shutdown() override;
+
+	// フレームをQRReadへ送る
+	cv::Mat GetFrame() const override { return frame_; }
 
 public:
 	// カメラ入力用

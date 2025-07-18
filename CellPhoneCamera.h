@@ -1,12 +1,12 @@
 #pragma once
-#include "IFeature.h"
+#include "ICamera.h"
 
 #include "KamataEngine.h"
 
 #include <opencv2/opencv.hpp>
 #include <ZXing/ReadBarcode.h>
 
-class CellPhoneCamera : public IFeature 
+class CellPhoneCamera : public ICamera
 {
 public:
 	// 初期化
@@ -20,6 +20,9 @@ public:
 
 	// DroidCamのデバイスIDを確認
 	int SetCameraDeviceID();
+
+	// フレームをQRReadへ送る
+	cv::Mat GetFrame() const override { return frame_; }
 
 private:
 	// スマホが接続された仮想カメラのデバイスID

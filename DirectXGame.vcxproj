@@ -101,7 +101,7 @@ xcopy /Y /I "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <Optimization>MinSpace</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -125,6 +125,7 @@ xcopy /Y "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250
   <ItemGroup>
     <ClCompile Include="CameraSelector.cpp" />
     <ClCompile Include="CellPhoneCamera.cpp" />
+    <ClCompile Include="Character.cpp" />
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PCCamera.cpp" />
@@ -209,7 +210,9 @@ xcopy /Y "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250
   <ItemGroup>
     <ClInclude Include="CameraSelector.h" />
     <ClInclude Include="CellPhoneCamera.h" />
+    <ClInclude Include="Character.h" />
     <ClInclude Include="GameScene.h" />
+    <ClInclude Include="ICamera.h" />
     <ClInclude Include="IFeature.h" />
     <ClInclude Include="PCCamera.h" />
     <ClInclude Include="QRExport.h" />
