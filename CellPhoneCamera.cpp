@@ -16,8 +16,8 @@ void CellPhoneCamera::Initialize()
 		return;
 	}
 
-	// ウィンドウを作成
-	cv::namedWindow("CellPhone_Camera Preview", cv::WINDOW_AUTOSIZE);
+	//// ウィンドウを作成
+	//cv::namedWindow("CellPhone_Camera Preview", cv::WINDOW_AUTOSIZE);
 }
 
 void CellPhoneCamera::Update()

@@ -1,4 +1,5 @@
 #pragma once
+#define NOMINMAX
 #include "KamataEngine.h"
 #include <opencv2/opencv.hpp>
 #include <ZXing/ReadBarcode.h>

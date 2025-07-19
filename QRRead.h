@@ -2,6 +2,7 @@
 #include "IFeature.h"
 #include "ICamera.h"
 
+#define NOMINMAX
 #include "KamataEngine.h"
 
 #include <opencv2/opencv.hpp>

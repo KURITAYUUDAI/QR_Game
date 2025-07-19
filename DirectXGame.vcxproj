@@ -217,6 +217,7 @@ xcopy /Y "C:\Users\yuuda\source\repos\2nd_grade\TR1\02\QR_Game\KamataEngine20250
     <ClInclude Include="PCCamera.h" />
     <ClInclude Include="QRExport.h" />
     <ClInclude Include="QRRead.h" />
+    <ClInclude Include="ZXingConfig.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

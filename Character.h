@@ -1,4 +1,5 @@
 #pragma once
+#define NOMINMAX
 #include "KamataEngine.h"
 
 class Character

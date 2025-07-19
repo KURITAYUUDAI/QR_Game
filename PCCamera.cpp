@@ -16,12 +16,12 @@ void PCCamera::Initialize()
 		return;
 	}
 
-	// 解像度を設定（必要に応じて）
-	camera_.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-	camera_.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+	//// 解像度を設定（必要に応じて）
+	//camera_.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+	//camera_.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
 
-	// ウィンドウを作成
-	cv::namedWindow("PC_Camera Preview", cv::WINDOW_AUTOSIZE);
+	//// ウィンドウを作成
+	//cv::namedWindow("PC_Camera Preview", cv::WINDOW_AUTOSIZE);
 }
 
 void PCCamera::Update()
