@@ -37,13 +37,19 @@ void QRExport::Initialize()
 	border_ = 4;
 	
 	savePath_ = "Output/qr_codes";
+
+	editData_ = 
+	{
+	    1001, 10, 500, 75, 30, 2, {11, 22}
+    };
 }
 
 void QRExport::Update()
 {
 	// テキストQR / バイナリQR モード切替フラグ
 	static bool binaryMode = false;
-	if (ImGui::Button(binaryMode ? "Change Text QR mode" : "Change Binary QR mode")) {
+	if (ImGui::Button(binaryMode ? "Switch Text QR mode" : "Switch Binary QR mode")) 
+	{
 		binaryMode = !binaryMode;
 	}
 	ImGui::Separator();
@@ -99,14 +105,75 @@ void QRExport::Update()
 	else
 	{
 		// --- バイナリ QR ---
+		
+		// uint32_t の範囲
+		static uint32_t minU32 = std::numeric_limits<uint32_t>::min();
+		static uint32_t maxU32 = std::numeric_limits<uint32_t>::max();
+		
+		// uint8_t の範囲
+		
+
+
+		// 範囲定義
+		static uint32_t minCharId = 0,	maxCharId = 10000;
+		static uint8_t  minU8 = 0,		maxU8 = std::numeric_limits<uint8_t>::max();
+		static uint16_t minU16 = 0,		maxU16 = std::numeric_limits<uint16_t>::max();
+		static uint32_t minAtk = 0,		maxAtk = 1000; 
+		static uint8_t  minSkills = 0,	maxSkills = 16;
+		static uint16_t minSkillId = 0, maxSkillId = 32;
+		
+		// CharacterData の編集パネル
+		// QRExport::Update() 内の編集パネル部分
+		ImGui::Begin("Character Editor");
+		
+		DataInputSlider("Character ID (0 ~ 10000)", editData_, 
+			&Character::CharacterData::characterId, minCharId, maxCharId);
+
+		DataInputSlider("Level (0 ~ 255)", editData_, 
+			&Character::CharacterData::level, minU8, maxU8);
+
+		DataInputSlider("HP (0 ~ 65535)", editData_, 
+			&Character::CharacterData::hp, minU16, maxU16);
+
+		DataInputSlider("Attack (0 ~ 1000)", editData_, 
+			&Character::CharacterData::attack, minAtk, maxAtk);
+
+		DataInputSlider("Defense (0 ~ 1000)", editData_, 
+			&Character::CharacterData::defense, minAtk, maxAtk);
+
+		DataInputSlider("Num Skills (0 ~ 16)", editData_, 
+			&Character::CharacterData::numSkills, minSkills, maxSkills);
+
+		// numSkills が変わったら必ずリサイズ
+		if (editData_.skillIds.size() != editData_.numSkills) 
+		{
+			editData_.skillIds.resize(editData_.numSkills);
+		}
+
+		// Skill ID 列 (uint16_t)
+		if (editData_.numSkills > 0) 
+		{
+			ImGui::Indent();
+			for (int i = 0; i < editData_.numSkills; ++i) 
+			{
+				ImGui::PushID(i);
+				
+				DataInputSlider(("Skill ID " + std::to_string(i + 1)).c_str(), 
+					editData_.skillIds[i], minSkillId, maxSkillId);
+
+				ImGui::PopID();
+			}
+			ImGui::Unindent();
+		}
+
+		ImGui::End();
+
+		
+
 		if (ImGui::Button("Generate Binary QR for CharacterData")) 
 		{
-			// サンプル CharacterData
-			Character::CharacterData cd
-			{
-			    1001, 10, 500, 75, 30, 2, {101, 202}
-            };
-			auto buf = Character::SerializeCharacterData(cd);
+			
+			auto buf = Character::SerializeCharacterData(editData_);
 			auto chunks = Character::MakeChunks(buf, /*maxPayload*/ 200);
 			for (auto& c : chunks) 
 			{
@@ -176,4 +243,34 @@ cv::Mat QRExport::generateBinaryQR(const std::vector<uint8_t>& data)
 			img.at<uchar>(y, x) = matrix.get(x, y) ? 0 : 255;
 	
 	return img;
+}
+
+template<typename T> 
+void QRExport::DataInputSlider(
+	const char* label, Character::CharacterData& editData, 
+	T Character::CharacterData::* member, T minVal, T maxVal)
+{
+	// メンバーアクセスして参照版にフォワード
+	DataInputSlider(label, editData.*member, minVal, maxVal);
+}
+
+
+template<typename T>
+void QRExport::DataInputSlider(const char* label, T& value, T minVal, T maxVal) 
+{
+	std::string sliderId = std::string("##") + label + "Slider";
+	std::string inputId = std::string("##") + label + "Input";
+
+	ImGui::Text("%s", label);
+	ImGui::SliderScalar(sliderId.c_str(), ImGuiDT<T>(), &value, &minVal, &maxVal, "%u");
+	ImGui::SameLine();
+	ImGui::PushItemWidth(60);
+	if (ImGui::InputScalar(inputId.c_str(), ImGuiDT<T>(), 
+		&value, nullptr, nullptr, "%u", ImGuiInputTextFlags_CharsDecimal)) 
+	{
+		value = value < minVal ? minVal 
+			: value > maxVal ? maxVal 
+			: value;
+	}
+	ImGui::PopItemWidth();
 }

@@ -18,8 +18,8 @@ std::vector<uint8_t> Character::SerializeCharacterData(const CharacterData& data
 	// 1. characterId (4 バイト)
 	appendLE<uint32_t>(buf, data.characterId);
 
-	// 2. level (2 バイト)
-	appendLE<uint16_t>(buf, data.level);
+	// 2. level (1 バイト)
+	appendLE<uint8_t>(buf, data.level);
 
 	// 3. hp (2 バイト)
 	appendLE<uint16_t>(buf, data.hp);
@@ -54,9 +54,8 @@ Character::CharacterData Character::DeserializeCharacterData(const std::vector<u
 	idx += 4;
 
 	// level
-	data.level = uint16_t(buf[idx]) 
-			  | (uint16_t(buf[idx + 1]) << 8);
-	idx += 2;
+	data.level = uint16_t(buf[idx]);
+	idx++;
 
 	// hp
 	data.hp = uint16_t(buf[idx])

@@ -9,7 +9,7 @@ public:
 	struct CharacterData
 	{
 		uint32_t characterId;		// キャラクターID
-		uint16_t level;				// レベル
+		uint8_t level;				// レベル
 		uint16_t hp;				// 体力
 		uint32_t attack;			// 攻撃力
 		uint32_t defense;			// 防御力

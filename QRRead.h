@@ -5,6 +5,8 @@
 #define NOMINMAX
 #include "KamataEngine.h"
 
+#include "Character.h"
+
 #include <opencv2/opencv.hpp>
 #include <ZXing/ReadBarcode.h>
 
@@ -12,11 +14,18 @@ class QRRead : public IFeature
 {
 public:
 	
-	enum CameraMode 
-	{
-		Wait,				// 待機モード
-		PC_Camera,			// PCカメラモード
-		CellPhone_Camera,	// スマホカメラモード
+	enum class OperationMode 
+	{ 
+		Wait, 
+		Capture, 
+		LoadFile 
+	};
+	// キャプチャ方法
+	enum class CaptureMode 
+	{ 
+		Wait,
+		PC_Camera, 
+		CellPhone_Camera 
 	};
 
 	QRRead();
@@ -31,12 +40,21 @@ public:
 	void Shutdown() override;
 
 	// モード変更
-	void ChangeCameraMode(CameraMode mode);
+	void ChangeCameraMode(CaptureMode mode);
+
+	// 新規：バイナリ処理
+	void BinaryResult(const ZXing::Result& result);
 
 private:
 
 	// カメラ変更用変数
-	CameraMode mode_;
+
+	OperationMode operationMode_ = OperationMode::Wait;
+
+	CaptureMode captureMode_ = CaptureMode::PC_Camera;
+
+	// ファイル読込用
+	std::string filePath_;
 
 	// ImGui::Combo用のインデックス
 	int cameraModeIndex_;
@@ -52,6 +70,23 @@ private:
 
 	// QRコードから読み取った文字列
 	std::string qrCodeText_;
+
+	// バイナリモードフラグ
+	bool binaryMode_ = false;                            
+
+	// チャンク蓄積
+	std::map<uint8_t, std::vector<uint8_t>> chunkBuffer_;  
+	
+	// 全チャンク数
+	uint8_t expectedTotal_ = 0;   
+
+	// 読み取ったキャラデータ
+	Character::CharacterData lastData_;
+	
+	// データ読み取り済みフラグ
+	bool hasData_ = false;
+
+
 
 };
 
