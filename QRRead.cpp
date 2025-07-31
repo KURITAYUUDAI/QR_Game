@@ -15,6 +15,7 @@ using namespace KamataEngine;
 QRRead::QRRead()
 { 
 	ChangeCameraMode(CaptureMode::Wait); 
+	isReadRGB_ = std::vector<bool>(3, false);
 }
 
 void QRRead::Initialize() 
@@ -94,6 +95,11 @@ void QRRead::Update()
 		{
 			captureMode_ = static_cast<CaptureMode>(capIndex);
 			ChangeCameraMode(captureMode_);
+
+			for (int i = 0; i < 3; i++)
+			{
+				isReadRGB_[i] = false; // RGB各チャンネルの読み取りフラグをリセット
+			}
 		}
 		if (currentCamera_)
 		{
@@ -239,17 +245,22 @@ void QRRead::Update()
 				{
 					if (operationMode_ == OperationMode::Capture) 
 					{
-						// カメラデバイスのシャットダウン
-						if (currentCamera_) 
-						{
-							currentCamera_->Shutdown();
-							currentCamera_.reset(); // 所有権を破棄
-						}
-						// UI上も「待機モード」に戻す
-						captureMode_ = CaptureMode::Wait;
-						cv::destroyAllWindows();
+						isReadRGB_[i] = true; // 読み取り済みフラグをセット
 					}
 				}
+			}
+
+			// RGB各チャンネルの読み取り済みフラグがすべて立っていれば、キャプチャモードを終了
+			if (std::all_of(isReadRGB_.begin(), isReadRGB_.end(), [](bool v) { return v; }))
+			{
+				// カメラデバイスのシャットダウン
+				if (currentCamera_) {
+					currentCamera_->Shutdown();
+					currentCamera_.reset(); // 所有権を破棄
+				}
+				// UI上も「待機モード」に戻す
+				captureMode_ = CaptureMode::Wait;
+				cv::destroyAllWindows();
 			}
 		} 
 		else

@@ -88,6 +88,8 @@ private:
 
 	bool isRGB_ = false;
 
+	std::vector<bool> isReadRGB_; // RGB各チャンネルの読み取り済みフラグ
+
 	std::array<std::string, 3> rgbCodeText_; // R, G, B（index = 2, 1, 0）
 
 	static constexpr int MAX_BASE64_LEN = 64 * 1024;

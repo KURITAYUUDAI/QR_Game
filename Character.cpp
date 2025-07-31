@@ -4,7 +4,7 @@
 std::vector<uint8_t> Character::SerializeCharacterData(const CharacterData& data) 
 {
 	std::vector<uint8_t> buf;
-	// あらかじめ容量を確保しておくと realloc が減り高速化
+	// あらかじめ容量を確保しておく
 	buf.reserve(
 		  sizeof(data.characterId) 
 		+ sizeof(data.level) 

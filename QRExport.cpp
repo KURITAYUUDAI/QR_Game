@@ -8,6 +8,8 @@
 
 #include <ZXing/qrcode/QRErrorCorrectionLevel.h>
 
+#include <chrono>
+
 using namespace KamataEngine;
 
 // ここからバイナリかテキストでクラス分けするか、変数で分岐する形にするか
@@ -66,6 +68,7 @@ void QRExport::Update()
 			border_ = 4;
 		}
 	}
+
 	ImGui::Separator();
 
 	if (!binaryMode) 
@@ -158,16 +161,7 @@ void QRExport::Update()
 			cv::imshow("RGB QR Preview", rgbQRImage_);
 		}
 
-		/*if (!rgbQRImage_.empty()) 
-		{
-			if (ImGui::Button("Save RGB QR")) 
-			{
-				std::filesystem::create_directories(savePath_);
-				std::string saveFilePath = savePath_ + "/rgb_qr.png";
-				cv::imwrite(saveFilePath, rgbQRImage_);
-			}
-		}
-
+		/*
 		if (ImGui::Button("Generate RGB QR (Dot Grid)")) {
 			ZXing::MultiFormatWriter writer(ZXing::BarcodeFormat::QRCode);
 			writer.setMargin(border_);
@@ -200,7 +194,21 @@ void QRExport::Update()
 		}*/
 
 		ImGui::Separator();
-		ImGui::Text("### RGB Text QR Generator");
+		if (ImGui::Button("Test Max Payload for RGB Channels")) 
+		{
+			// 各チャンネルで二分探索
+			for (int i = 0; i < 3; ++i) {
+				// 1～5000 バイトの範囲で探る
+				maxPayloadRGB_[i] = FindMaxPayload(1, 5000);
+			}
+		}
+		ImGui::Text("Red channel   : %zu bytes", maxPayloadRGB_[0]);
+		ImGui::Text("Green channel : %zu bytes", maxPayloadRGB_[1]);
+		ImGui::Text("Blue channel  : %zu bytes", maxPayloadRGB_[2]);
+		ImGui::Text("Max Payload RGB: %zu bytes", maxPayloadRGB_[0] + maxPayloadRGB_[1] + maxPayloadRGB_[2]);
+
+		ImGui::Separator();
+		ImGui::Text("RGB Text QR Generator");
 		ImGui::InputTextMultiline("Text Data", textBuf_, sizeof(textBuf_), ImVec2(-1, 120), 0);
 
 		if (ImGui::Button("Generate RGB Text QR"))
@@ -236,9 +244,27 @@ void QRExport::Update()
 			cv::merge(bgr, rgbQRImage_);
 
 
-			cv::imshow("RGB QR Base64 Preview", rgbQRImage_);
+			cv::imshow("RGB QR Preview", rgbQRImage_);
 		}
 		
+
+		if (!rgbQRImage_.empty()) 
+		{
+			// ファイル名設定
+			ImGui::InputText("File Name", fileNameBuf_, sizeof(fileNameBuf_));
+
+			if (ImGui::Button("Save RGB QR")) 
+			{
+				// 1) 入力文字列取得
+				std::string fileName(fileNameBuf_);
+				if (fileName.empty())
+					return;
+
+				std::filesystem::create_directories(savePath_);
+				std::string saveFilePath = savePath_ +  "/" + fileName + ".png";
+				cv::imwrite(saveFilePath, rgbQRImage_);
+			}
+		}
 	} 
 	else
 	{
@@ -434,4 +460,18 @@ cv::Mat QRExport::BitMatrixToMonoMat(const ZXing::BitMatrix& m)
 		}
 	}
 	return img;
+}
+
+// 最大情報量測定
+size_t QRExport::TestMaxPayload() 
+{
+	// おおよそ 1〜5000 バイトの範囲で探索
+	auto t0 = std::chrono::high_resolution_clock::now();
+	size_t maxBytes = FindMaxPayload(1, 5000);
+	auto t1 = std::chrono::high_resolution_clock::now();
+	double ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+	std::cout << "[TestMaxPayload] 最大ペイロード = " << maxBytes << " バイト (計測 " << ms << " ms )\n";
+
+	return maxBytes;
 }

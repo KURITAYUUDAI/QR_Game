@@ -16,7 +16,7 @@ public:
 		// 習得技IDリスト（固定長 kMaxSkills）
         static constexpr size_t kMaxSkills = 16;
         uint8_t numSkills;							// 実際に有効なスキル数 (0～kMaxSkills)
-		std::array<uint16_t, kMaxSkills> skillIds;	// 固定長配列（未使用要素は 0 でパディング）
+		std::array<uint16_t, kMaxSkills> skillIds;	// 固定長配列（未使用要素は 0 で埋める）
 	};
 
 	struct Chunk 
@@ -26,7 +26,7 @@ public:
 		std::vector<uint8_t> payload;
 	};
 
-	// リトルエンディアンで整数を buf に追加するユーティリティ
+	// 指定した型で配列に追加
 	template<typename T>
 	static void appendLE(std::vector<uint8_t>& buf, T value) 
 	{

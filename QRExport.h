@@ -62,6 +62,44 @@ public:
 
 	cv::Mat BitMatrixToMonoMat(const ZXing::BitMatrix& matrix);
 
+	bool TryGenerate(const std::vector<uint8_t>& data) 
+	{
+		try 
+		{
+			auto mat = GenerateBinaryQR(data);
+			return !mat.empty();
+		} 
+		catch (...) 
+		{
+			return false;
+		}
+	}
+
+
+	/// 最大バイト数を二分探索で探る関数
+	size_t FindMaxPayload(size_t low, size_t high)
+	{
+		size_t best = 0;
+		while (low <= high) 
+		{
+			size_t mid = (low + high) / 2;
+			std::vector<uint8_t> buf(mid, 0x41); // ダミー (ASCII 'A')
+			if (TryGenerate(buf)) 
+			{
+				best = mid;
+				low = mid + 1;
+			} 
+			else
+			{
+				high = mid - 1;
+			}
+		}
+		return best;
+	}
+
+
+	size_t TestMaxPayload();
+
 private:
 
 	// エクスポートする文字列
@@ -94,7 +132,9 @@ private:
 	static constexpr int MAX_TEXT_LENGTH = 64 * 1024; // テキスト入力の最大長
 	char textBuf_[MAX_TEXT_LENGTH] = "";              // テキスト入力用バッファ
 	
+	char fileNameBuf_[256] = ""; // ファイル名入力用バッファ
 
+	 size_t maxPayloadRGB_[3] = {0, 0, 0};
 
 	// 設定用キャラデータ
 	Character::CharacterData editData_;
