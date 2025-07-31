@@ -33,9 +33,10 @@ std::vector<uint8_t> Character::SerializeCharacterData(const CharacterData& data
 	// 6. numSkills (1 バイト)
 	buf.push_back(data.numSkills);
 
-	// 7. skillIds (各 2 バイト × numSkills)
-	for (auto id : data.skillIds) 
+	// 7. skillIds（固定長 kMaxSkills、未使用分は0）
+	for (size_t i = 0; i < CharacterData::kMaxSkills; ++i) 
 	{
+		uint16_t id = (i < data.numSkills) ? data.skillIds[i] : 0;
 		appendLE<uint16_t>(buf, id);
 	}
 
@@ -79,14 +80,11 @@ Character::CharacterData Character::DeserializeCharacterData(const std::vector<u
 	// numSkills
 	data.numSkills = buf[idx++];
 
-	// skillIds
-	data.skillIds.clear();
-	data.skillIds.reserve(data.numSkills);
-	for (int i = 0; i < data.numSkills; ++i) 
+	 // 7. skillIds（常に kMaxSkills 個読み込む）
+	for (size_t i = 0; i < CharacterData::kMaxSkills; ++i) 
 	{
-		uint16_t id = uint16_t(buf[idx]) 
-				   | (uint16_t(buf[idx + 1]) << 8);
-		data.skillIds.push_back(id);
+		uint16_t id = uint16_t(buf[idx]) | (uint16_t(buf[idx + 1]) << 8);
+		data.skillIds[i] = id;
 		idx += 2;
 	}
 

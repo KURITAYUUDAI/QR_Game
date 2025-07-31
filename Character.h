@@ -13,9 +13,10 @@ public:
 		uint16_t hp;				// 体力
 		uint32_t attack;			// 攻撃力
 		uint32_t defense;			// 防御力
-		// 習得技IDリスト（可変長は末尾に長さ＋ID列を入れる）
-		uint8_t numSkills;
-		std::vector<uint16_t> skillIds;
+		// 習得技IDリスト（固定長 kMaxSkills）
+        static constexpr size_t kMaxSkills = 16;
+        uint8_t numSkills;							// 実際に有効なスキル数 (0～kMaxSkills)
+		std::array<uint16_t, kMaxSkills> skillIds;	// 固定長配列（未使用要素は 0 でパディング）
 	};
 
 	struct Chunk 

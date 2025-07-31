@@ -86,8 +86,13 @@ private:
 	// データ読み取り済みフラグ
 	bool hasData_ = false;
 
+	bool isRGB_ = false;
 
+	std::array<std::string, 3> rgbCodeText_; // R, G, B（index = 2, 1, 0）
 
+	static constexpr int MAX_BASE64_LEN = 64 * 1024;
+
+	 char base64Buf_[MAX_BASE64_LEN] = {0};
 };
 
 

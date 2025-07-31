@@ -51,6 +51,20 @@ void QRExport::Update()
 	if (ImGui::Button(binaryMode ? "Switch Text QR mode" : "Switch Binary QR mode")) 
 	{
 		binaryMode = !binaryMode;
+		if (binaryMode)
+		{
+			width_ = 140;
+			height_ = 140;
+			scale_ = 4;
+			border_ = 3;
+		} 
+		else
+		{
+			width_ = 250;
+			height_ = 250;
+			scale_ = 10;
+			border_ = 4;
+		}
 	}
 	ImGui::Separator();
 
@@ -101,6 +115,130 @@ void QRExport::Update()
 				cv::imwrite(saveFilePath, qrImage_);
 			}
 		}
+
+		ImGui::Separator();
+		ImGui::Text("=== RGB MultiQR ===");
+
+		static char buf_R[512], buf_G[512], buf_B[512];
+		strncpy_s(buf_R, redText_.c_str(), sizeof(buf_R));
+		strncpy_s(buf_G, greenText_.c_str(), sizeof(buf_G));
+		strncpy_s(buf_B, blueText_.c_str(), sizeof(buf_B));
+
+		ImGui::InputText("Red QR Text", buf_R, sizeof(buf_R));
+		redText_ = std::string(buf_R);
+		ImGui::InputText("Green QR Text", buf_G, sizeof(buf_G));
+		greenText_ = std::string(buf_G);
+		ImGui::InputText("Blue QR Text", buf_B, sizeof(buf_B));
+		blueText_ = std::string(buf_B);
+
+
+		if (ImGui::Button("Generate RGB QR")) 
+		{
+			ZXing::MultiFormatWriter writer(ZXing::BarcodeFormat::QRCode);
+			writer.setMargin(border_);
+			writer.setEncoding(ZXing::CharacterSet::UTF8);
+
+			auto redMatrix = writer.encode(redText_, width_, height_);
+			auto greenMatrix = writer.encode(greenText_, width_, height_);
+			auto blueMatrix = writer.encode(blueText_, width_, height_);
+
+			rgbQRImage_ = cv::Mat(height_, width_, CV_8UC3);
+
+			for (int y = 0; y < height_; ++y) 
+			{
+				for (int x = 0; x < width_; ++x) 
+				{
+					uint8_t r = redMatrix.get(x, y) ? 255 : 0;
+					uint8_t g = greenMatrix.get(x, y) ? 255 : 0;
+					uint8_t b = blueMatrix.get(x, y) ? 255 : 0;
+					rgbQRImage_.at<cv::Vec3b>(y, x) = cv::Vec3b(b, g, r);
+				}
+			}
+
+			cv::imshow("RGB QR Preview", rgbQRImage_);
+		}
+
+		/*if (!rgbQRImage_.empty()) 
+		{
+			if (ImGui::Button("Save RGB QR")) 
+			{
+				std::filesystem::create_directories(savePath_);
+				std::string saveFilePath = savePath_ + "/rgb_qr.png";
+				cv::imwrite(saveFilePath, rgbQRImage_);
+			}
+		}
+
+		if (ImGui::Button("Generate RGB QR (Dot Grid)")) {
+			ZXing::MultiFormatWriter writer(ZXing::BarcodeFormat::QRCode);
+			writer.setMargin(border_);
+			writer.setEncoding(ZXing::CharacterSet::UTF8);
+
+			auto redMatrix = writer.encode(redText_, width_, height_);
+			auto greenMatrix = writer.encode(greenText_, width_, height_);
+			auto blueMatrix = writer.encode(blueText_, width_, height_);
+
+			rgbQRImage_ = cv::Mat(height_, width_, CV_8UC3, cv::Scalar(0, 0, 0));
+
+			for (int y = 0; y < height_; ++y) {
+				for (int x = 0; x < width_; ++x) {
+					int slot = (x + y) % 3;
+					uint8_t r = 0, g = 0, b = 0;
+
+					if (slot == 0 && redMatrix.get(x, y)) {
+						r = 255;
+					} else if (slot == 1 && greenMatrix.get(x, y)) {
+						g = 255;
+					} else if (slot == 2 && blueMatrix.get(x, y)) {
+						b = 255;
+					}
+
+					rgbQRImage_.at<cv::Vec3b>(y, x) = cv::Vec3b(b, g, r);
+				}
+			}
+
+			cv::imshow("RGB QR Preview", rgbQRImage_);
+		}*/
+
+		ImGui::Separator();
+		ImGui::Text("### RGB Text QR Generator");
+		ImGui::InputTextMultiline("Text Data", textBuf_, sizeof(textBuf_), ImVec2(-1, 120), 0);
+
+		if (ImGui::Button("Generate RGB Text QR"))
+		{
+			// 1) 入力文字列取得
+			std::string str(textBuf_);
+			if (str.empty())return;
+
+			// 2) 3分割
+			size_t len = str.size();
+			size_t part = len / 3;
+			std::string parts[3] = 
+			{ 
+				str.substr(0,    part), 
+				str.substr(part, part), 
+				str.substr(part * 2)
+			};
+
+			// 3) 各チャンネルでQR生成
+			ZXing::MultiFormatWriter writer(ZXing::BarcodeFormat::QRCode);
+			writer.setMargin(border_);
+			writer.setEncoding(ZXing::CharacterSet::UTF8);
+
+			 cv::Mat channel[3];
+			for (int i = 0; i < 3; ++i) 
+			{
+				 auto matrix = writer.encode(parts[i], width_, height_);
+				 channel[i] = BitMatrixToMonoMat(matrix);
+			}
+
+			// 4) BGR順にマージ（OpenCVはB,G,Rの順）
+			std::vector<cv::Mat> bgr = {channel[2], channel[1], channel[0]};
+			cv::merge(bgr, rgbQRImage_);
+
+
+			cv::imshow("RGB QR Base64 Preview", rgbQRImage_);
+		}
+		
 	} 
 	else
 	{
@@ -111,8 +249,6 @@ void QRExport::Update()
 		static uint32_t maxU32 = std::numeric_limits<uint32_t>::max();
 		
 		// uint8_t の範囲
-		
-
 
 		// 範囲定義
 		static uint32_t minCharId = 0,	maxCharId = 10000;
@@ -144,12 +280,6 @@ void QRExport::Update()
 		DataInputSlider("Num Skills (0 ~ 16)", editData_, 
 			&Character::CharacterData::numSkills, minSkills, maxSkills);
 
-		// numSkills が変わったら必ずリサイズ
-		if (editData_.skillIds.size() != editData_.numSkills) 
-		{
-			editData_.skillIds.resize(editData_.numSkills);
-		}
-
 		// Skill ID 列 (uint16_t)
 		if (editData_.numSkills > 0) 
 		{
@@ -158,8 +288,20 @@ void QRExport::Update()
 			{
 				ImGui::PushID(i);
 				
-				DataInputSlider(("Skill ID " + std::to_string(i + 1)).c_str(), 
-					editData_.skillIds[i], minSkillId, maxSkillId);
+				bool enabled = (i < editData_.numSkills);
+				if (!enabled)
+				{
+					ImGui::BeginDisabled();
+				}
+
+				// std::array の要素に直接アクセス
+				std::string label = "Skill ID " + std::to_string(i + 1);
+				DataInputSlider(label.c_str(), editData_.skillIds[i], minSkillId, maxSkillId);
+
+				if (!enabled) 
+				{
+					ImGui::EndDisabled();
+				}
 
 				ImGui::PopID();
 			}
@@ -177,7 +319,7 @@ void QRExport::Update()
 			auto chunks = Character::MakeChunks(buf, /*maxPayload*/ 200);
 			for (auto& c : chunks) 
 			{
-				qrImage_ = generateBinaryQR(c.payload);
+				qrImage_ = GenerateBinaryQR(c.payload);
 				// 保存やプレビューは generateBinaryQR 内で実施
 			}
 
@@ -208,7 +350,7 @@ void QRExport::Shutdown()
 	qrImage_.release();
 }
 
-cv::Mat QRExport::generateBinaryQR(const std::vector<uint8_t>& data) 
+cv::Mat QRExport::GenerateBinaryQR(const std::vector<uint8_t>& data) 
 {
 	// ヘッダ + payload をまとめる
 	std::vector<uint8_t> buf;
@@ -239,8 +381,13 @@ cv::Mat QRExport::generateBinaryQR(const std::vector<uint8_t>& data)
 	// ──── 5) BitMatrix → OpenCV Mat ────
 	cv::Mat img(height_, width_, CV_8UC1);
 	for (int y = 0; y < height_; ++y)
+	{
 		for (int x = 0; x < width_; ++x)
-			img.at<uchar>(y, x) = matrix.get(x, y) ? 0 : 255;
+		{
+			img.at<uchar>(y, x) = matrix.get(x, y) ? 255 : 0;
+
+		}
+	}
 	
 	return img;
 }
@@ -273,4 +420,18 @@ void QRExport::DataInputSlider(const char* label, T& value, T minVal, T maxVal)
 			: value;
 	}
 	ImGui::PopItemWidth();
+}
+
+cv::Mat QRExport::BitMatrixToMonoMat(const ZXing::BitMatrix& m) 
+{
+	int w = m.width(), h = m.height();
+	cv::Mat img(h, w, CV_8UC1);
+	for (int y = 0; y < h; ++y) 
+	{
+		for (int x = 0; x < w; ++x) 
+		{
+			img.at<uint8_t>(y, x) = m.get(x, y) ? 255 : 0;
+		}
+	}
+	return img;
 }

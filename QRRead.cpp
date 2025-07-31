@@ -73,6 +73,13 @@ void QRRead::Update()
 		}
 	}
 
+	if (ImGui::Checkbox("Enable RGB QR mode", &isRGB_)) 
+	{
+		qrCodeText_.clear();
+		rgbCodeText_ = {"", "", ""};
+	}
+	ImGui::Separator();
+
 
 	switch (operationMode_)
 	{
@@ -117,41 +124,98 @@ void QRRead::Update()
 		return;
 	}
 
-	// グレースケール化
-	cv::Mat gray;
-	cv::cvtColor(frame_, gray, cv::COLOR_BGR2GRAY);
+	ZXing::Barcode result;
+	std::vector<ZXing::Barcode> rgbResults_(3);
 
-	// ZXing に投げるための ImageView を生成
-	ZXing::ImageView iv(gray.data, gray.cols, gray.rows, ZXing::ImageFormat::Lum);
-
-	// デコード実行
-	auto result = ZXing::ReadBarcode(iv, options_);
-	if (result.isValid()) 
+	if (isRGB_) 
 	{
-		if (binaryMode_)
-		{
-			BinaryResult(result);
-		}
-		else
-		{
-			qrCodeText_ = result.text();
-		}
-	}
+		std::vector<cv::Mat> channels;
+		cv::split(frame_, channels); // [B, G, R]
 
-	ImGui::Separator();
-	if (!binaryMode_) 
-	{
-		ImGui::Text("%s", qrCodeText_.c_str());
+		for (int i = 0; i < 3; ++i) 
+		{
+			ZXing::ImageView iv(channels[i].data, channels[i].cols, channels[i].rows, ZXing::ImageFormat::Lum);
+			rgbResults_[i] = ZXing::ReadBarcode(iv, options_);
+			
+			if (rgbResults_[i].isValid())
+			{
+				rgbCodeText_[i] = rgbResults_[i].text();
+			}
+		}
 	} 
 	else 
 	{
-		ImGui::Text("=== Character Data ===");
-		ImGui::Text("ID        : %u", lastData_.characterId);
-		ImGui::Text("Level     : %u", lastData_.level);
-		ImGui::Text("HP        : %u", lastData_.hp);
-		ImGui::Text("Attack    : %u", lastData_.attack);
-		ImGui::Text("Defense   : %u", lastData_.defense);
-		ImGui::Text("NumSkills : %u", lastData_.numSkills);
+		// 通常のグレースケール処理
+		cv::Mat gray;
+		cv::cvtColor(frame_, gray, cv::COLOR_BGR2GRAY);
+		if (binaryMode_) 
+		{
+			cv::bitwise_not(gray, gray);
+		}
+
+		ZXing::ImageView iv(gray.data, gray.cols, gray.rows, ZXing::ImageFormat::Lum);
+		result = ZXing::ReadBarcode(iv, options_);
+
+		if (result.isValid()) 
+		{
+			if (binaryMode_) 
+			{
+				BinaryResult(result);
+			} 
+			else 
+			{
+				qrCodeText_ = result.text();
+			}
+		}
+
+		ImGui::Separator();
+	}
+
+	// バイナリモードでは白黒反転
+	// ZXing の仕様に合わせて、白背景のQRコードを黒背景に変換
+	// これにより、QRコードのデコードが正しく行えるようになる
+	// (ZXingは白背景のQRコードを想定しているため)
+	ImGui::Separator();
+
+	if (isRGB_) 
+	{
+		ImGui::Text("Red QR   : %s", rgbCodeText_[2].c_str());
+		ImGui::Text("Green QR : %s", rgbCodeText_[1].c_str());
+		ImGui::Text("Blue QR  : %s", rgbCodeText_[0].c_str());
+
+		if (ImGui::Button("Reconstruct Base64"))
+		{
+			// チャネル順： 
+			// parts[0]=R → rgbCodeText_[2], 
+			// parts[1]=G → rgbCodeText_[1], 
+			// parts[2]=B → rgbCodeText_[0]
+			std::string concat = rgbCodeText_[2] + rgbCodeText_[1] + rgbCodeText_[0];
+			
+			// バッファにコピー（安全にトランケート）
+			strncpy_s(base64Buf_, concat.c_str(), sizeof(base64Buf_));
+		}
+
+		// 読み取り専用で長文表示
+		ImGui::InputTextMultiline("Base64 Output", base64Buf_, sizeof(base64Buf_), 
+								  ImVec2(-1, 120), 
+								  ImGuiInputTextFlags_ReadOnly);
+	} 
+	else 
+	{
+		if (!binaryMode_) 
+		{
+			ImGui::Text("%s", qrCodeText_.c_str());
+		} 
+		else 
+		{
+			ImGui::Text("=== Character Data ===");
+			ImGui::Text("ID        : %u", lastData_.characterId);
+			ImGui::Text("Level     : %u", lastData_.level);
+			ImGui::Text("HP        : %u", lastData_.hp);
+			ImGui::Text("Attack    : %u", lastData_.attack);
+			ImGui::Text("Defense   : %u", lastData_.defense);
+			ImGui::Text("NumSkills : %u", lastData_.numSkills);
+		}
 		if (lastData_.numSkills > 0) 
 		{
 			ImGui::Text("Skill IDs :");
@@ -167,31 +231,52 @@ void QRRead::Update()
 	// キャプチャ使用時にフレームがあれば描画する
 	if (operationMode_ == OperationMode::Capture && currentCamera_) 
 	{
-		if (result.isValid()) 
+		if (isRGB_)
 		{
-			//// バウンディングポリゴンを描く
-			//auto pos = result.position(); // vector<PointF>
-			//for (size_t i = 0; i < pos.size(); ++i) 
-			//{
-			//	const auto& p1 = pos[i];
-			//	const auto& p2 = pos[(i + 1) % pos.size()];
-			//	cv::line(frame_, 
-			//		cv::Point(int(p1.x), int(p1.y)), 
-			//		cv::Point(int(p2.x), int(p2.y)), 
-			//		cv::Scalar(255, 0, 0), 2);
-			//}
-
-			if (operationMode_ == OperationMode::Capture) 
+			for (int i = 0; i < 3; ++i) 
 			{
-				// カメラデバイスのシャットダウン
-				if (currentCamera_) 
+				if (rgbResults_[i].isValid())
 				{
-					currentCamera_->Shutdown();
-					currentCamera_.reset(); // 所有権を破棄
+					if (operationMode_ == OperationMode::Capture) 
+					{
+						// カメラデバイスのシャットダウン
+						if (currentCamera_) 
+						{
+							currentCamera_->Shutdown();
+							currentCamera_.reset(); // 所有権を破棄
+						}
+						// UI上も「待機モード」に戻す
+						captureMode_ = CaptureMode::Wait;
+						cv::destroyAllWindows();
+					}
 				}
-				// UI上も「待機モード」に戻す
-				captureMode_ = CaptureMode::Wait;
-				cv::destroyAllWindows();
+			}
+		} 
+		else
+		{
+			if (result.isValid()) {
+				//// バウンディングポリゴンを描く
+				// auto pos = result.position(); // vector<PointF>
+				// for (size_t i = 0; i < pos.size(); ++i)
+				//{
+				//	const auto& p1 = pos[i];
+				//	const auto& p2 = pos[(i + 1) % pos.size()];
+				//	cv::line(frame_,
+				//		cv::Point(int(p1.x), int(p1.y)),
+				//		cv::Point(int(p2.x), int(p2.y)),
+				//		cv::Scalar(255, 0, 0), 2);
+				// }
+
+				if (operationMode_ == OperationMode::Capture) {
+					// カメラデバイスのシャットダウン
+					if (currentCamera_) {
+						currentCamera_->Shutdown();
+						currentCamera_.reset(); // 所有権を破棄
+					}
+					// UI上も「待機モード」に戻す
+					captureMode_ = CaptureMode::Wait;
+					cv::destroyAllWindows();
+				}
 			}
 		}
 

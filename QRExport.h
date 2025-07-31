@@ -28,7 +28,7 @@ public:
 	void Shutdown() override;
 
 	// バイナリ生成用
-	cv::Mat generateBinaryQR(const std::vector<uint8_t>& data);
+	cv::Mat GenerateBinaryQR(const std::vector<uint8_t>& data);
 
 	// ユーティリティ
 	template<typename T> 
@@ -60,6 +60,8 @@ public:
 	template<typename T> 
 	void DataInputSlider(const char* label, T& value, T minVal, T maxVal);
 
+	cv::Mat BitMatrixToMonoMat(const ZXing::BitMatrix& matrix);
+
 private:
 
 	// エクスポートする文字列
@@ -82,10 +84,18 @@ private:
 	// 生成したQRコードの保存先パス
 	std::string savePath_;
 
+	
+	std::string redText_ = "RedQR";
+	std::string greenText_ = "GreenQR";
+	std::string blueText_ = "BlueQR";
+
+	cv::Mat rgbQRImage_;
+	
+	static constexpr int MAX_TEXT_LENGTH = 64 * 1024; // テキスト入力の最大長
+	char textBuf_[MAX_TEXT_LENGTH] = "";              // テキスト入力用バッファ
+	
 
 
-	
-	
 	// 設定用キャラデータ
 	Character::CharacterData editData_;
 
